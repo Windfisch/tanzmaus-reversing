@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
+from util import readfile, split_sysexes
 
 outprefix = sys.argv[1]
+data = readfile(sys.stdin.buffer)
 
-i=0
-
-while True:
-	b = sys.stdin.buffer.read(1)
-	if len(b) == 0: break
-	
-	if b == b'\xf0':
-		f = open(outprefix + "%03d.part" % i, "wb")
-		i+=1
-	
-	if f is not None:
-		f.write(b)
+for i, sysex in enumerate(split_sysexes(data)):
+	open(outprefix + "%03d.part" % i, "wb").write(sysex)
