@@ -42,6 +42,7 @@ def parse_tanzmaus_sysex(sysexes):
 			pattern = bs[10]
 			if pattern != expected_pattern: raise ValueError("%s has unexpected pattern no %d instead of %d" % (fn, pattern, expected_pattern))
 			expected_pattern += 1
+			if bs[11] != 0: raise ValueError("unexpected byte after pattern no, expected 00 instead of %s" % hex(bs[11]))
 
 			pattern_data.append(bytes())
 
@@ -50,23 +51,29 @@ def parse_tanzmaus_sysex(sysexes):
 		if len(bs) != expected_len:
 			raise ValueError("%s has unexpected length (%d instead of %d)" % (fn, len(bs), expected_len))
 
-		payload = bs[10:-1]
-		pattern_data[-1] += payload
-	
+		payload7 = bs[10:-1]
+		payload7 = payload7[:-4]
+		payload8 = convert_7to8(payload7)
+		pattern_data[-1] += payload8
+
+	for d in pattern_data: assert(d[1] == 0)
+	pattern_data = [ d[2:] for d in pattern_data ] # strip the first 16 bits. 14 of these are the pattern id + 00 anyway. this makes the base drum step pattern start at position zero, which is probably good.
+
 	return pattern_data
 
 def convert_7to8(data):
 	result = bytes()
-	for i in range(0, len(data)-7, 8):
-		block = ""
-		for j in range(0,8):
-			bits = ("%7s" % bin(data[i+j])[2:]).replace(' ','0')
-			bits_reversed = bits[::-1]
-			block += bits_reversed
-		assert(len(block)==56)
-		
-		result += bytes([int(block[j:j+8],2) for j in range(0,56,8)])
-	return result
+	block = ""
+	for i in range(0, len(data)):
+		bits = ("%7s" % bin(data[i])[2:]).replace(' ','0')
+		bits_reversed = bits[::-1]
+		block += bits_reversed
+	
+		if len(block) >= 8:
+			result += bytes([int(block[0:8],2)])
+			block = block[8:]
+	
+	if block.find('1') != -1:
+		raise ValueError("convert_7to8 with nonzero remainder!")
 
-def pattern_7to8(data):
-	return convert_7to8(data[2:]) # strip the first two bytes, which seem to be "pattern number" and "zero"
+	return result
