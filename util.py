@@ -77,3 +77,12 @@ def convert_7to8(data):
 		raise ValueError("convert_7to8 with nonzero remainder!")
 
 	return result
+
+def bitmirror(data):
+	result = b''
+	for i in range(len(data)):
+		bits = ("%8s"%bin(data[i])[2:]).replace(' ','0')
+		bits_reversed = bits[::-1]
+		result += bytes([int(bits_reversed,2)])
+	return result
+
