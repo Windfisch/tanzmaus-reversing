@@ -54,23 +54,24 @@ patterns = parse_tanzmaus_sysex(sysexes)
 pattern = bitmirror(patterns[pattern_id])
 
 columns = [
-	["bd","step"], ["bd","data"], ["bdlfo","step"], ["bdlfo","data"],
+	["bd","step"], ["bd","data"], ["bdlfo","step"], ["bdlfo","data"], ["bdlfo","unk1"], ["bdlfo","unk2"], ["bdlfo","unk3"],
 	["sd","step"], ["sd","data"],
 	["rs","step"],
-	["cp","step"], ["cp","data"], ["cplfo","step"], ["cplfo","data"],
-	["tt","step"], ["tt","data"], ["ttlfo","step"], ["ttlfo","data"],
-	["sp1","step"], ["sp1","data"], ["sp1lfo","step"], ["sp1lfo","data"],
-	["sp2","step"], ["sp2","data"], ["sp2lfo","step"], ["sp2lfo","data"] ]
+	["cp","step"], ["cp","data"], ["cplfo","step"], ["cplfo","data"], ["cplfo","unk1"], ["cplfo","unk2"], ["cplfo","unk3"],
+	["tt","step"], ["tt","data"], ["ttlfo","step"], ["ttlfo","data"], ["ttlfo","unk1"], ["ttlfo","unk2"], ["ttlfo","unk3"],
+	["sp1","step"], ["sp1","data"], ["sp1lfo","step"], ["sp1lfo","data"], ["sp1lfo","unk1"], ["sp1lfo","unk2"], ["sp1lfo","unk3"],
+	["sp2","step"], ["sp2","data"], ["sp2lfo","step"], ["sp2lfo","data"], ["sp2lfo","unk1"], ["sp2lfo","unk2"], ["sp2lfo","unk3"]
+]
 
 BDSTEP,BDDATA,BDLFOSTEP,BDLFODATA=0,1,2,3
-SDSTEP,SDDATA=4,5
+SDSTEP,SDDATA=7,8
 RSSTEP=6
 CPSTEP,CPDATA,CPLFOSTEP,CPLFODATA=7,8,9,10
 TTSTEP,TTDATA,TTLFOSTEP,TTLFODATA=11,12,13,14
 SP1STEP,SP1DATA,SP1LFOSTEP,SP1LFODATA=15,16,17,18
 SP2STEP,SP2DATA,SP2LFOSTEP,SP2LFODATA=19,20,21,22
 
-BD,SD,RS,CP,TT,SP1,SP2 = BDSTEP,SDSTEP,RSSTEP,CPSTEP,TTSTEP,SP1STEP,SP2STEP
+BD,SD,RS,CP,TT,SP1,SP2 = 0,7,9,10,17,24,31
 
 for index,instr in enumerate([BD,SD,RS,CP,TT,SP1,SP2]):
 	add(columns[instr], pattern[0x40*index : 0x40*(index+1)])
@@ -82,7 +83,19 @@ for index,instr in enumerate([BD,CP,TT,SP1,SP2]):
 	base = 0xa76 + index*0xa0
 	add(columns[instr+2], pattern[base : base+0x20])
 	add(columns[instr+3], pattern[base+0x20 : base+0x40])
+	add(columns[instr+4], pattern[base+0x40 : base+0x60])
+	add(columns[instr+5], pattern[base+0x60 : base+0x80])
+	add(columns[instr+6], pattern[base+0x80 : base+0xa0])
+	unknown = pattern[base+0x40 : base+0xa0]
+	for j in range(3):
+		print("%4x: %s" % (base+0x40+0x20*j, hexdump(unknown[0x20*j:0x20*(j+1)]).replace('00','..')))
 
 colprint(columns)
 
+
+print("1c0 - 1c8 = %s" % hexdump(pattern[0x1c0:0x1c8]))
+if any(b!=0 for b in pattern[0x1c8:0x2b6]):
+	print("1c8 - 2b6 = %s" % hexdump(pattern[0x1c8:0x2b6]))
+
+print(hexdump(pattern[0xd96:0xd9e]))
 
